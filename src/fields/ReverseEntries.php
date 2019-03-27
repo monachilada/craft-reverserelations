@@ -3,17 +3,17 @@
 namespace robuust\reverserelations\fields;
 
 use Craft;
-use craft\base\Field;
 use craft\base\Element;
-use craft\db\Table;
-use craft\db\Query;
-use craft\elements\Entry;
-use craft\helpers\Db;
-use craft\fields\Matrix;
-use craft\fields\Entries;
-use craft\base\FieldInterface;
 use craft\base\ElementInterface;
+use craft\base\Field;
+use craft\base\FieldInterface;
+use craft\db\Query;
+use craft\db\Table;
 use craft\elements\db\ElementQuery;
+use craft\elements\Entry;
+use craft\fields\Entries;
+use craft\fields\Matrix;
+use craft\helpers\Db;
 
 /**
  * Reverse Relations Entries Field.
@@ -84,7 +84,7 @@ class ReverseEntries extends Entries
         );
 
         // Return both
-        return $settings.$fieldSelectTemplate;
+        return $settings . $fieldSelectTemplate;
     }
 
     /**
@@ -136,7 +136,7 @@ class ReverseEntries extends Entries
             $entry = Craft::$app->getEntries()->getEntryById($element->id);
 
             // Get old sources
-            $this->oldSources = $entry->{$this->handle}->all();
+            $this->oldSources = !empty($entry) ? $entry->{$this->handle}->all() : [];
         }
 
         return parent::beforeElementSave($element, $isNew);
@@ -166,15 +166,18 @@ class ReverseEntries extends Entries
 
         // Loop through sources
         /** @var ElementInterface $source */
+
         foreach ($sources as $source) {
             $target = $source->getFieldValue($field->handle);
 
-            // Set this element on that entry
-            $this->saveRelations(
-                $field,
-                $source,
-                array_merge($target->ids(), [$element->id])
-            );
+            if ($field instanceof craft\fields\Entries) {
+                // Set this element on that entry
+                $this->saveRelations(
+                    $field,
+                    $source,
+                    array_merge($target->ids(), [$element->id])
+                );
+            }
         }
 
         // Loop through deleted sources
@@ -204,7 +207,7 @@ class ReverseEntries extends Entries
         $variables['readOnly'] = $this->readOnly || !$this->canSaveReverseRelation($field);
 
         // Return input template (local override if exists)
-        $template = 'reverserelations/'.$this->inputTemplate;
+        $template = 'reverserelations/' . $this->inputTemplate;
         $template = Craft::$app->view->doesTemplateExist($template) ? $template : $this->inputTemplate;
 
         return Craft::$app->view->renderTemplate($template, $variables);
